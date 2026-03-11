@@ -16,6 +16,7 @@ render_template() {
   src="$1"
   dst="$2"
 
+  echo "Rendering template ${src} to ${dst}"
   envsubst < "${src}" > "${dst}"
 }
 
