@@ -29,7 +29,7 @@ ENV MAILNAME=mail.example.com \
     RELAYHOST="mail.twc.com"
 
 RUN echo "Installing postfix" \
-    && apk -u add --no-cache postfix postfix-mysql postfix-pcre mailx policyd-spf-fs postfix-doc mariadb-client rspamd-client opendkim \
+  && apk -u add --no-cache postfix postfix-mysql postfix-pcre mailx policyd-spf-fs postfix-doc mariadb-client rspamd-client opendkim gettext \
     && update-ca-certificates  \
     && rm -rf /var/cache/apk/* /usr/src/* 
 
