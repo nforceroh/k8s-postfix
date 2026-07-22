@@ -37,7 +37,7 @@ COPY /content/etc/postfix /etc/postfix
 COPY --chmod=755 /content/etc/s6-overlay /etc/s6-overlay
 
 #Exposing tcp ports
-EXPOSE 25 465 587
+EXPOSE 25 465 587 10025
 
 #Adding volumes
 VOLUME ["/var/spool/postfix"]
