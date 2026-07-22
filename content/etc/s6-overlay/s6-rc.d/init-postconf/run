@@ -49,6 +49,16 @@ configure_smtps_service() {
 	postconf -P "smtps/inet/smtpd_relay_restrictions=permit_sasl_authenticated,reject"
 }
 
+configure_mailgallows_release_service() {
+    echo "Configuring postfix mailgallows-release service"
+    postconf -M 10025/inet="10025   inet   n   -   n   -   -   smtpd"
+    postconf -P "10025/inet/syslog_name=postfix/mailgallows-release"
+    postconf -P "10025/inet/smtpd_milters="
+    postconf -P "10025/inet/non_smtpd_milters="
+    postconf -P "10025/inet/smtpd_client_restrictions=permit_mynetworks,reject"
+    postconf -P "10025/inet/smtpd_relay_restrictions=permit_mynetworks,reject"
+}
+
 configure_maps_and_restrictions() {
 	echo "Configuring postfix SQL maps and restrictions"
 	postconf -e virtual_mailbox_domains=mysql:/etc/postfix/mysql-virtual-mailbox-domains.cf
@@ -175,6 +185,7 @@ require_env PROXY_MAILNAME
 configure_identity_and_network
 configure_submission_service
 configure_smtps_service
+configure_mailgallows_release_service
 configure_maps_and_restrictions
 configure_logging_milter_sasl_tls
 configure_limits_and_throttling
