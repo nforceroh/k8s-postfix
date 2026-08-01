@@ -182,6 +182,18 @@ configure_external_forwarding_rewrite() {
 		rewrite_header_from="${rewrite_sender}"
 	fi
 
+	# Sanitize header value and normalize plain email to angle-addr form.
+	rewrite_header_from="${rewrite_header_from//$'\r'/}"
+	rewrite_header_from="${rewrite_header_from//$'\n'/}"
+	while [ "${rewrite_header_from%\\}" != "${rewrite_header_from}" ]; do
+		rewrite_header_from="${rewrite_header_from%\\}"
+	done
+	rewrite_header_from="${rewrite_header_from## }"
+	rewrite_header_from="${rewrite_header_from%% }"
+	if [[ "${rewrite_header_from}" =~ ^"?([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})"?$ ]]; then
+		rewrite_header_from="<${BASH_REMATCH[1]}>"
+	fi
+
 	transport_nexthop="${RELAYHOST}"
 
 	echo "Configuring dedicated forwarding sender rewrite via ${transport_name} for: ${recipients_raw}"
