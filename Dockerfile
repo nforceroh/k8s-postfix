@@ -26,12 +26,24 @@ ENV MAILNAME=mail.example.com \
     SSL_CERT=/etc/postfix/certs/tls.crt \
     SSL_KEY=/etc/postfix/certs/tls.key \
     WAITSTART_TIMEOUT=1m \
-    RELAYHOST="mail.twc.com"
+    RELAYHOST="mail.twc.com" \
+    EXTERNAL_FORWARD_RECIPIENTS="" \
+    EXTERNAL_FORWARD_ENVELOPE_SENDER="forwarded-bounces@martintwingles.com" \
+    EXTERNAL_FORWARD_TRANSPORT_NAME="external-forward"
 
 RUN echo "Installing postfix" \
-  && apk -u add --no-cache postfix postfix-mysql postfix-pcre mailx policyd-spf-fs postfix-doc mariadb-client rspamd-client opendkim gettext \
-    && update-ca-certificates  \
-    && rm -rf /var/cache/apk/* /usr/src/* 
+  && if command -v apk >/dev/null 2>&1; then \
+      apk -u add --no-cache postfix postfix-mysql postfix-pcre mailx policyd-spf-fs postfix-doc mariadb-client rspamd-client opendkim gettext; \
+      update-ca-certificates; \
+      rm -rf /var/cache/apk/* /usr/src/*; \
+    elif command -v apt-get >/dev/null 2>&1; then \
+      apt-get update; \
+      DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends postfix postfix-pcre postfix-mysql bsd-mailx mariadb-client rspamd opendkim gettext-base ca-certificates; \
+      rm -rf /var/lib/apt/lists/*; \
+    else \
+      echo "No supported package manager found (expected apk or apt-get)"; \
+      exit 1; \
+    fi
 
 COPY /content/etc/postfix /etc/postfix
 COPY --chmod=755 /content/etc/s6-overlay /etc/s6-overlay

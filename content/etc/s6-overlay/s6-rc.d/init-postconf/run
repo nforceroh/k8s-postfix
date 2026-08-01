@@ -162,6 +162,46 @@ configure_optional_features() {
 	fi
 }
 
+configure_external_forwarding_rewrite() {
+	recipients_raw="${EXTERNAL_FORWARD_RECIPIENTS:-}"
+	rewrite_sender="${EXTERNAL_FORWARD_ENVELOPE_SENDER:-forwarded-bounces@martintwingles.com}"
+	transport_name="${EXTERNAL_FORWARD_TRANSPORT_NAME:-external-forward}"
+
+	if [ -z "${recipients_raw}" ] || [ -z "${rewrite_sender}" ]; then
+		echo "Skipping external forwarding rewrite (set EXTERNAL_FORWARD_RECIPIENTS and EXTERNAL_FORWARD_ENVELOPE_SENDER to enable)"
+		return 0
+	fi
+
+	echo "Configuring dedicated forwarding sender rewrite via ${transport_name} for: ${recipients_raw}"
+
+	# Keep this rewrite isolated to a dedicated transport path.
+	printf '/^.+$/    %s\n' "${rewrite_sender}" >/etc/postfix/sender_canonical.pcre
+
+	: >/etc/postfix/transport
+	recipients_list="${recipients_raw//,/ }"
+	for recipient in ${recipients_list}; do
+		printf '%s   %s:\n' "${recipient}" "${transport_name}" >>/etc/postfix/transport
+	done
+
+	if ! grep -q '[^[:space:]]' /etc/postfix/transport; then
+		echo "No valid EXTERNAL_FORWARD_RECIPIENTS entries found; skipping external forwarding rewrite"
+		return 0
+	fi
+
+	postmap /etc/postfix/transport
+
+	current_transport_maps="$(postconf -h transport_maps || true)"
+	if [ -z "${current_transport_maps}" ]; then
+		postconf -e transport_maps="hash:/etc/postfix/transport"
+	elif ! printf '%s' "${current_transport_maps}" | grep -Eq '(^|[[:space:],])hash:/etc/postfix/transport([[:space:],]|$)'; then
+		postconf -e transport_maps="${current_transport_maps}, hash:/etc/postfix/transport"
+	fi
+
+	postconf -M "${transport_name}/unix=${transport_name}   unix  -       -       n       -       -       smtp"
+	postconf -P "${transport_name}/unix/sender_canonical_maps=pcre:/etc/postfix/sender_canonical.pcre"
+	postconf -P "${transport_name}/unix/sender_canonical_classes=envelope_sender"
+}
+
 finalize_permissions() {
 	echo "Fixing postfix permissions"
 	postfix set-permissions create-missing
@@ -191,6 +231,7 @@ configure_logging_milter_sasl_tls
 configure_limits_and_throttling
 configure_aliases_and_relay
 configure_optional_features
+configure_external_forwarding_rewrite
 #finalize_permissions
 validate_postfix_config
 
