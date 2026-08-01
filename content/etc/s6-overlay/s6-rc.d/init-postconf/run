@@ -166,6 +166,7 @@ configure_external_forwarding_rewrite() {
 	recipients_raw="${EXTERNAL_FORWARD_RECIPIENTS:-}"
 	rewrite_sender="${EXTERNAL_FORWARD_ENVELOPE_SENDER:-forwarded-bounces@martintwingles.com}"
 	transport_name="${EXTERNAL_FORWARD_TRANSPORT_NAME:-external-forward}"
+	rewrite_header_from="${EXTERNAL_FORWARD_HEADER_FROM:-}"
 
 	if [ -z "${recipients_raw}" ] || [ -z "${rewrite_sender}" ]; then
 		echo "Skipping external forwarding rewrite (set EXTERNAL_FORWARD_RECIPIENTS and EXTERNAL_FORWARD_ENVELOPE_SENDER to enable)"
@@ -175,6 +176,10 @@ configure_external_forwarding_rewrite() {
 	if [ -z "${RELAYHOST:-}" ]; then
 		echo "ERROR: EXTERNAL_FORWARD_RECIPIENTS is enabled but RELAYHOST is empty; refusing to allow direct external delivery"
 		return 1
+	fi
+
+	if [ -z "${rewrite_header_from}" ]; then
+		rewrite_header_from="${rewrite_sender}"
 	fi
 
 	transport_nexthop="${RELAYHOST}"
@@ -212,6 +217,10 @@ configure_external_forwarding_rewrite() {
 	postconf -M "${transport_name}/unix=${transport_name}   unix  -       -       n       -       -       smtp"
 	postconf -P "${transport_name}/unix/sender_canonical_maps=pcre:/etc/postfix/sender_canonical.pcre"
 	postconf -P "${transport_name}/unix/sender_canonical_classes=envelope_sender"
+	cat <<EOF >/etc/postfix/external-forward-header-checks.pcre
+/^From:.*/ REPLACE From: ${rewrite_header_from}
+EOF
+	postconf -P "${transport_name}/unix/smtp_header_checks=pcre:/etc/postfix/external-forward-header-checks.pcre"
 }
 
 finalize_permissions() {
