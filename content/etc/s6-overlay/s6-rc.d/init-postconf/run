@@ -177,6 +177,8 @@ configure_external_forwarding_rewrite() {
 		return 1
 	fi
 
+	transport_nexthop="${RELAYHOST}"
+
 	echo "Configuring dedicated forwarding sender rewrite via ${transport_name} for: ${recipients_raw}"
 
 	# Keep this rewrite isolated to a dedicated transport path.
@@ -186,7 +188,7 @@ configure_external_forwarding_rewrite() {
 	recipients_list="${recipients_raw//,/ }"
 	for recipient in ${recipients_list}; do
 		escaped_recipient="$(printf '%s' "${recipient}" | sed -e 's/[.[\*^$()+?{|]/\\&/g')"
-		printf '/^%s$/i   %s:\n' "${escaped_recipient}" "${transport_name}" >>/etc/postfix/transport.pcre
+		printf '/^%s$/i   %s:%s\n' "${escaped_recipient}" "${transport_name}" "${transport_nexthop}" >>/etc/postfix/transport.pcre
 	done
 
 	if ! grep -q '[^[:space:]]' /etc/postfix/transport.pcre; then
@@ -210,7 +212,6 @@ configure_external_forwarding_rewrite() {
 	postconf -M "${transport_name}/unix=${transport_name}   unix  -       -       n       -       -       smtp"
 	postconf -P "${transport_name}/unix/sender_canonical_maps=pcre:/etc/postfix/sender_canonical.pcre"
 	postconf -P "${transport_name}/unix/sender_canonical_classes=envelope_sender"
-	postconf -P "${transport_name}/unix/relayhost=${RELAYHOST}"
 }
 
 finalize_permissions() {
