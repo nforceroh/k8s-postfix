@@ -29,8 +29,7 @@ ENV MAILNAME=mail.example.com \
     RELAYHOST="mail.twc.com" \
     EXTERNAL_FORWARD_RECIPIENTS="" \
     EXTERNAL_FORWARD_ENVELOPE_SENDER="forwarded-bounces@martintwingles.com" \
-    EXTERNAL_FORWARD_TRANSPORT_NAME="external-forward" \
-    EXTERNAL_FORWARD_RELAYHOST=""
+    EXTERNAL_FORWARD_TRANSPORT_NAME="external-forward"
 
 RUN echo "Installing postfix" \
   && if command -v apk >/dev/null 2>&1; then \

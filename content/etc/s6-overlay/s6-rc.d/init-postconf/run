@@ -166,7 +166,6 @@ configure_external_forwarding_rewrite() {
 	recipients_raw="${EXTERNAL_FORWARD_RECIPIENTS:-}"
 	rewrite_sender="${EXTERNAL_FORWARD_ENVELOPE_SENDER:-forwarded-bounces@martintwingles.com}"
 	transport_name="${EXTERNAL_FORWARD_TRANSPORT_NAME:-external-forward}"
-	external_forward_relayhost="${EXTERNAL_FORWARD_RELAYHOST:-}"
 
 	if [ -z "${recipients_raw}" ] || [ -z "${rewrite_sender}" ]; then
 		echo "Skipping external forwarding rewrite (set EXTERNAL_FORWARD_RECIPIENTS and EXTERNAL_FORWARD_ENVELOPE_SENDER to enable)"
@@ -206,9 +205,6 @@ configure_external_forwarding_rewrite() {
 	postconf -M "${transport_name}/unix=${transport_name}   unix  -       -       n       -       -       smtp"
 	postconf -P "${transport_name}/unix/sender_canonical_maps=pcre:/etc/postfix/sender_canonical.pcre"
 	postconf -P "${transport_name}/unix/sender_canonical_classes=envelope_sender"
-	if [ -n "${external_forward_relayhost}" ]; then
-		postconf -P "${transport_name}/unix/relayhost=${external_forward_relayhost}"
-	fi
 }
 
 finalize_permissions() {
