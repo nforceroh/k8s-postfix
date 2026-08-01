@@ -30,6 +30,7 @@ ENV MAILNAME=mail.example.com \
     EXTERNAL_FORWARD_RECIPIENTS="" \
     EXTERNAL_FORWARD_ENVELOPE_SENDER="forwarded-bounces@martintwingles.com" \
     EXTERNAL_FORWARD_TRANSPORT_NAME="external-forward" \
+    EXTERNAL_FORWARD_HEADER_DISPLAY_NAME="Forwarded via martintwingles.com" \
     EXTERNAL_FORWARD_HEADER_FROM=""
 
 RUN echo "Installing postfix" \

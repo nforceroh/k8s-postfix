@@ -167,6 +167,7 @@ configure_external_forwarding_rewrite() {
 	rewrite_sender="${EXTERNAL_FORWARD_ENVELOPE_SENDER:-forwarded-bounces@martintwingles.com}"
 	transport_name="${EXTERNAL_FORWARD_TRANSPORT_NAME:-external-forward}"
 	rewrite_header_from="${EXTERNAL_FORWARD_HEADER_FROM:-}"
+	header_from_display_name="${EXTERNAL_FORWARD_HEADER_DISPLAY_NAME:-Forwarded via martintwingles.com}"
 	rewrite_sender_email=""
 	rewrite_header_email=""
 
@@ -199,7 +200,13 @@ configure_external_forwarding_rewrite() {
 		return 1
 	fi
 	rewrite_sender="${rewrite_sender_email}"
-	rewrite_header_from="<${rewrite_header_email}>"
+	header_from_display_name="${header_from_display_name//$'\r'/}"
+	header_from_display_name="${header_from_display_name//$'\n'/}"
+	if [ -n "${header_from_display_name}" ]; then
+		rewrite_header_from="\"${header_from_display_name}\" <${rewrite_header_email}>"
+	else
+		rewrite_header_from="<${rewrite_header_email}>"
+	fi
 
 	transport_nexthop="${RELAYHOST}"
 
@@ -237,6 +244,9 @@ configure_external_forwarding_rewrite() {
 	postconf -P "${transport_name}/unix/sender_canonical_maps=pcre:/etc/postfix/sender_canonical.pcre"
 	postconf -P "${transport_name}/unix/sender_canonical_classes=envelope_sender"
 	cat <<EOF >/etc/postfix/external-forward-header-checks.pcre
+/^Reply-To:.*/ IGNORE
+/^From:[[:space:]]*(.*)$/ PREPEND X-Original-From: $1
+/^From:[[:space:]]*(.*)$/ PREPEND Reply-To: $1
 /^From:.*/ REPLACE From: ${rewrite_header_from}
 EOF
 	postconf -P "${transport_name}/unix/smtp_header_checks=pcre:/etc/postfix/external-forward-header-checks.pcre"
