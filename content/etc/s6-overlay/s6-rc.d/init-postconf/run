@@ -172,6 +172,11 @@ configure_external_forwarding_rewrite() {
 		return 0
 	fi
 
+	if [ -z "${RELAYHOST:-}" ]; then
+		echo "ERROR: EXTERNAL_FORWARD_RECIPIENTS is enabled but RELAYHOST is empty; refusing to allow direct external delivery"
+		return 1
+	fi
+
 	echo "Configuring dedicated forwarding sender rewrite via ${transport_name} for: ${recipients_raw}"
 
 	# Keep this rewrite isolated to a dedicated transport path.
@@ -205,6 +210,7 @@ configure_external_forwarding_rewrite() {
 	postconf -M "${transport_name}/unix=${transport_name}   unix  -       -       n       -       -       smtp"
 	postconf -P "${transport_name}/unix/sender_canonical_maps=pcre:/etc/postfix/sender_canonical.pcre"
 	postconf -P "${transport_name}/unix/sender_canonical_classes=envelope_sender"
+	postconf -P "${transport_name}/unix/relayhost=${RELAYHOST}"
 }
 
 finalize_permissions() {
